@@ -19,7 +19,7 @@ addon_info = {
 	# Translators: Long description to be shown for this add-on on add-on information from add-ons manager
 	"addon_description" : _("""Provides access to NVDA's hidden audio options, that are usually only available if you know about them, and edit the config file directly."""),
 	# version
-	"addon_version" : "0.1.0-dev",
+	"addon_version" : "0.1.0-test",
 	# Author(s)
 	"addon_author" : u"Luke Davis <newanswertech@gmail.com>",
 	# URL for the add-on documentation support

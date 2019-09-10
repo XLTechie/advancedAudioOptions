@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Advanced Audio Options (advancedAudioOptions.py), version 0.1.0-dev
+# Advanced Audio Options (advancedAudioOptions.py), version 0.1.0-test
 # An NVDA global plugin to provide UI access to the "hidden" NVDA audio options
 
 #    Copyright (C) 2019 Luke Davis <newanswertech@gmail.com>
