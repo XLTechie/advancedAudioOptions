@@ -12,15 +12,17 @@
 # You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-from __future__ import unicode_literals
-#from configobj import ConfigObj
-import globalPluginHandler, config, gui, wx
-#import globalVars
+from __future__ import unicode_literals # So we don't need strings like u"blah" in Python 2
+import globalPluginHandler
+import config
+import gui
+import wx
+import aoconf # Add-on config tools module included with add-on
 
-#from addonHandler import initTranslation
-#initTranslation()	# Make _() work correctly
+from addonHandler import initTranslation
+initTranslation()	# Make _() work correctly
 
-_DEBUGGING = False
+_DEBUGGING = True # Change to False for release versions!
 
 if _DEBUGGING:
 	from logHandler import log
@@ -50,6 +52,7 @@ else:
 class GlobalPlugin (globalPluginHandler.GlobalPlugin):
 
 	l("In globalPlugin")
+
 	# Needed for NVDA configuration dialog setup.
 	def __init__(self, *args, **kwargs):
 		super(GlobalPlugin, self).__init__(*args, **kwargs)
@@ -85,13 +88,21 @@ class GlobalPlugin (globalPluginHandler.GlobalPlugin):
 	# Main program logic
 
 # Add-on config database
-# Pretty well ripped off from Enhanced Touch Gestures and Golden Cursor by Joseph Lee
+# Use only for config items in the [my_add-on_name] section of config, represented here by _myConfName
 confspec = {
-	"beepSpeechModePitch": "integer(min=55, max=8372, default=8000)",
+	"beepSpeechModePitch": "integer(min=50, max=11025, default=10000)",
 	"audioCoordinates_minPitch": "integer(min=55, max=4186, default=220)",
 	"audioCoordinates_maxPitch": "integer(min=110, max=8372, default=880)",
 }
 config.conf.spec[_myConfName] = confspec
+# Use for config keys that belong to other config sections (not part of this add-on).
+# For example, if our "reportKeyboardShortcuts" variable was to be assigned to the global config, in the "input" section, you would use this:
+# foreignConfig = { "reportKeyboardShortcuts" : [ "input" ] }
+foreignConfig = {
+	"beepSpeechModePitch" : [ "speech" ],
+	"audioCoordinates_minPitch" : [ "mouse" ],
+	"audioCoordinates_maxPitch" : [ "mouse" ],
+}
 
 class _MyConfCls(_configParent):
 	l("In _MyConfCls with title: " + _configDialogTitle)
@@ -107,7 +118,28 @@ class _MyConfCls(_configParent):
 		# Translators: The label for a numeric setting
 		self.audioCoordinates_maxPitch = conObj.addLabeledControl(_("audioCoordinates_maxPitch"), gui.nvdaControls.SelectOnFocusSpinCtrl, min=55, max=8372, initial=config.conf["advancedAudioOptions"]["audioCoordinates_maxPitch"])
 
+	# Performs onSave service for settings panel, and customizable part of onOk services for settings dialog. Do all changes here.
 	def onSave(self):
-		l("In _MyConfCls.onSave().")
+		l("In onSave() of _MyConfCls.")
+		# Apply the add-on's own config keys to the global config dictionary
 		for name in confspec:
 			config.conf[_myConfName][name] = getattr(self, name).Value
+		# Apply any foreign config keys to the global config dictionary
+		for name, configPath in foreignConfig.iteritems():
+			l("Setting up foreign config item {0}, with config path {1}.".format(name, configPath))
+			firstLoop = True # Track the first loop because that has to set the value, the rest just builds the dict path
+			tempConfig = {}
+			for element in reversed(configPath):
+				l("Acting on: {0}".format(element))
+				if firstLoop: # This is the right-most key: assign the value
+					tempConfig[name] = getattr(self, name)
+					firstLoop = False
+				tempConfig = {element : tempConfig} # Prepend the current element
+			l("Adding the following configuration: {0}".format(tempConfig))
+			# Merge the resulting dictionary into the global configuration
+			aoconf.mergeWithConfig(tempConfig)
+
+def onOk(self, evt):
+	l("In onOk() of _MyConfCls.")
+	self.onSave()
+	super(_MyConfCls, self).onOk(evt)
