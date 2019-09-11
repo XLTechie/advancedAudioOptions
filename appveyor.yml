@@ -4,7 +4,7 @@ max_jobs: 1
 branches:
   only:
     - master
-    - /test|alpha|beta/
+    - /test|alpha|beta|dev/
     - /^\d+\.\d+(\.\d+)?$/
     - /^v?\d+\.\d+\.\d+(-[a-zA-Z0-9\.]+)?$/ # Because it applies to tags as well
 
